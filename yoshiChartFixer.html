@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON Null Remover</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-image: linear-gradient(to right, #150C76, #430450);
+    }
+    #yoshiLogo {
+        display: flex;
+        justify-content: center;
+        align-items: normal;
+        height: 55vh;
+        width: 79vh;
+        background-image: url("novathefurrydev.github.io/Yoshi-Engine-Chart-Formatter/images/YCELogo.webp");
+    }
+    .container {
+        max-width: 600px;
+        width: 100%;
+        padding: 20px;
+        background-color: white;
+        border-radius: 10px;
+        border: 3px solid black;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+        margin-top: 0;
+        color: #150C76;
+    }
+    #fuck {
+        color: #150C76;
+    }
+    input[type="file"] {
+        display: none;
+    }
+    .custom-file-upload {
+        display: inline-block;
+        padding: 10px 20px;
+        cursor: pointer;
+        border-radius: 5px;
+        background-color: #4CAF50;
+        color: #150C76;
+        transition: background-color 0.3s ease;
+    }
+    .custom-file-upload:hover {
+        background-color: #45a049;
+    }
+    button {
+        padding: 10px 20px;
+        background-color: #4CAF50;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        color: #150C76;
+    }
+    button:hover {
+        background-color: #45a049;
+        color: #150C76;
+    }
+    select {
+        padding: 8px 12px;
+        border-radius: 5px;
+        color: #150C76;
+    }
+    #outputContainer {
+        margin-top: 20px;
+        padding: 10px;
+        background-color: #f5f5f5;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        display: none;
+    }
+    #output {
+        white-space: pre;
+    }
+    #downloadButton {
+        margin-top: 20px;
+        padding: 10px;
+        background-color: #4CAF50;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+    }
+    #downloadButton:hover {
+        background-color: #45a049;
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h2>Select a JSON file</h2>
+        <label for="fileInput" class="fileInputLabel" id="fuck">Select File</label>
+        <label class="custom-file-upload">
+            <input type="file" id="fileInput"/>
+            Custom Upload
+        </label>
+        <button id="removeNullButton">Remove Null</button>
+        <label for="outputVisibility">Output Visibility:</label>
+        <select id="outputVisibility">
+            <option value="none" selected>Hidden</option>
+            <option value="block">Visible</option>
+        </select>
+        <div id="outputContainer" style="display: none;">
+            <div id="output"></div>
+        </div>
+        <button id="downloadButton">Download Output</button>
+    </div>
+    <div id="yoshiLogo"></div>
+    <script>
+        document.getElementById('removeNullButton').addEventListener('click', function() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                try {
+                    const json = JSON.parse(content);
+                    const cleanedJson = removeNullValues(json);
+                    formatJson(cleanedJson);
+                    const outputVisibility = document.getElementById('outputVisibility').value;
+                    document.getElementById('outputContainer').style.display = outputVisibility;
+                } catch (error) {
+                    document.getElementById('output').innerText = "Error parsing JSON: " + error.message;
+                    document.getElementById('outputContainer').style.display = 'block';
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        function removeNullValues(obj) {
+            if (Array.isArray(obj)) {
+                return obj.map(removeNullValues).filter(item => item !== null);
+            } else if (obj !== null && typeof obj === 'object') {
+                return Object.keys(obj).reduce((acc, key) => {
+                    const value = removeNullValues(obj[key]);
+                    if (value !== null) {
+                        acc[key] = value;
+                    }
+                    return acc;
+                }, {});
+            }
+            return obj;
+        }
+
+        function formatJson(jsonObject) {
+            try {
+                const formattedJson = JSON.stringify(jsonObject, null, 4); // 4-space indentation
+                document.getElementById('output').textContent = formattedJson;
+            } catch (error) {
+                document.getElementById('output').textContent = 'Error formatting JSON: ' + error.message;
+            }
+        }
+
+        document.getElementById('downloadButton').addEventListener('click', function() {
+            const outputText = document.getElementById('output').innerText;
+            const blob = new Blob([outputText], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'formatted.json';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 0);
+        });
+
+        document.getElementById('outputVisibility').addEventListener('change', function() {
+            document.getElementById('outputContainer').style.display = this.value;
+        });
+    </script>
+</body>
+</html>
